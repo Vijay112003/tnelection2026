@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Election Countdown — April 23, 2026</title>
+    <style>
+        :root{--bg:#0f1724;--card:#0b1220;--accent:#06b6d4;--muted:#ffffff;--glass:rgba(255,255,255,0.03)}
+        *{box-sizing:border-box}
+        body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;
+        background:url('file:///Users/vijay-23648/Downloads/tvk.jpg') center/cover no-repeat;
+        color:#e6eef6;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+        .wrap{width:100%;max-width:920px}
+        header{display:flex;align-items:start;gap:12px;margin-bottom:20px;justify-content: center;}
+        h1{font-size:20px;margin:0}
+        .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+        .card{background:linear-gradient(180deg,var(--card),var(--glass));border-radius:12px;padding:18px;box-shadow:0 6px 24px rgba(2,6,23,0.6);backdrop-filter:blur(6px)}
+        .label{font-size:13px;color:var(--muted);margin-bottom:6px}
+        .timer{display:flex;gap:10px;flex-wrap:wrap}
+        .unit{background:rgba(255,255,255,0.03);padding:12px 14px;border-radius:8px;min-width:76px;text-align:center}
+        .num{font-size:20px;font-weight:700}
+        .small{font-size:12px;color:var(--muted);margin-top:6px}
+        .meta{margin-top:12px;color:var(--muted);font-size:13px}
+        .status{margin-top:10px;padding:8px;border-radius:8px;font-weight:600;display:inline-block}
+        .soon{color:#083344;background:linear-gradient(90deg,#ff0e0e,#ffe100,#ff0e0e);border:1px solid rgba(6,182,212,0.12)}
+        .passed{color:#2a2a2a;background:#9ee6a8;border:1px solid rgba(0,0,0,0.06)}
+        @media (max-width:720px){.grid{grid-template-columns:1fr}}
+    </style>
+</head>
+<body>
+    <main class="wrap" role="main">
+        <header>
+            <h1>Election countdown</h1>
+        </header>
+
+        <section class="grid" aria-label="Countdowns">
+            <article class="card" id="electionCard" aria-labelledby="electionTitle" role="region">
+                <div class="label" id="electionTitle">Election day — April 23, 2026</div>
+                <div class="timer" aria-live="polite" aria-atomic="true">
+                    <div class="unit"><div class="num" id="eDays">--</div><div class="small">Days</div></div>
+                    <div class="unit"><div class="num" id="eHours">--</div><div class="small">Hours</div></div>
+                    <div class="unit"><div class="num" id="eMinutes">--</div><div class="small">Minutes</div></div>
+                    <div class="unit"><div class="num" id="eSeconds">--</div><div class="small">Seconds</div></div>
+                </div>
+                <div id="electionStatus" class="status" aria-hidden="true"></div>
+            </article>
+
+            <article class="card" id="resultCard" aria-labelledby="resultTitle" role="region">
+                <div class="label" id="resultTitle">Results expected — May 4, 2026</div>
+                <div class="timer" aria-live="polite" aria-atomic="true">
+                    <div class="unit"><div class="num" id="rDays">--</div><div class="small">Days</div></div>
+                    <div class="unit"><div class="num" id="rHours">--</div><div class="small">Hours</div></div>
+                    <div class="unit"><div class="num" id="rMinutes">--</div><div class="small">Minutes</div></div>
+                    <div class="unit"><div class="num" id="rSeconds">--</div><div class="small">Seconds</div></div>
+                </div>
+                <div id="resultStatus" class="status" aria-hidden="true"></div>
+            </article>
+        </section>
+    </main>
+
+    <script>
+        // Targets are set to midnight at the start of the date in the user's local timezone.
+        const electionTarget = new Date(2026, 3, 23, 0, 0, 0); // months: 0=Jan, so 3 = April
+        const resultTarget   = new Date(2026, 4, 4, 0, 0, 0);  // 4 = May
+
+        const elems = {
+            eDays: document.getElementById('eDays'),
+            eHours: document.getElementById('eHours'),
+            eMinutes: document.getElementById('eMinutes'),
+            eSeconds: document.getElementById('eSeconds'),
+            eStatus: document.getElementById('electionStatus'),
+            rDays: document.getElementById('rDays'),
+            rHours: document.getElementById('rHours'),
+            rMinutes: document.getElementById('rMinutes'),
+            rSeconds: document.getElementById('rSeconds'),
+            rStatus: document.getElementById('resultStatus'),
+        };
+
+        function pad(n){ return String(n).padStart(2,'0'); }
+
+        function updateCountdown(target, outElems, statusElem, labelPast, labelNow){
+            const now = new Date();
+            let delta = Math.floor((target - now) / 1000); // seconds
+            if (delta <= 0) {
+                // target reached or passed
+                outElems.eDays && (outElems.eDays.textContent = "00");
+                outElems.eHours && (outElems.eHours.textContent = "00");
+                outElems.eMinutes && (outElems.eMinutes.textContent = "00");
+                outElems.eSeconds && (outElems.eSeconds.textContent = "00");
+                outElems.rDays && (outElems.rDays.textContent = "00");
+                outElems.rHours && (outElems.rHours.textContent = "00");
+                outElems.rMinutes && (outElems.rMinutes.textContent = "00");
+                outElems.rSeconds && (outElems.rSeconds.textContent = "00");
+                statusElem.textContent = labelNow;
+                statusElem.className = "status passed";
+                statusElem.setAttribute('aria-hidden','false');
+                return;
+            }
+
+            const days = Math.floor(delta / 86400); delta -= days * 86400;
+            const hours = Math.floor(delta / 3600); delta -= hours * 3600;
+            const minutes = Math.floor(delta / 60); delta -= minutes * 60;
+            const seconds = delta;
+
+            if (outElems.eDays) { outElems.eDays.textContent = pad(days); outElems.eHours.textContent = pad(hours); outElems.eMinutes.textContent = pad(minutes); outElems.eSeconds.textContent = pad(seconds); }
+            if (outElems.rDays) { outElems.rDays.textContent = pad(days); outElems.rHours.textContent = pad(hours); outElems.rMinutes.textContent = pad(minutes); outElems.rSeconds.textContent = pad(seconds); }
+
+            statusElem.textContent = labelPast.replace('{d}', days).replace('{h}', hours).replace('{m}', minutes);
+            statusElem.className = "status soon";
+            statusElem.setAttribute('aria-hidden','false');
+        }
+
+        function tick(){
+            // Update election card
+            (function(){
+                const target = electionTarget;
+                const now = new Date();
+                let delta = Math.floor((target - now) / 1000);
+                const status = document.getElementById('electionStatus');
+                if (delta <= 0) {
+                    status.textContent = "Election day has arrived";
+                    status.className = "status passed";
+                    status.setAttribute('aria-hidden','false');
+                    elems.eDays.textContent = "00"; elems.eHours.textContent = "00";
+                    elems.eMinutes.textContent = "00"; elems.eSeconds.textContent = "00";
+                } else {
+                    const days = Math.floor(delta / 86400); delta -= days*86400;
+                    const hours = Math.floor(delta / 3600); delta -= hours*3600;
+                    const minutes = Math.floor(delta / 60); delta -= minutes*60;
+                    const seconds = delta;
+                    elems.eDays.textContent = String(days).padStart(2,'0');
+                    elems.eHours.textContent = String(hours).padStart(2,'0');
+                    elems.eMinutes.textContent = String(minutes).padStart(2,'0');
+                    elems.eSeconds.textContent = String(seconds).padStart(2,'0');
+                    status.textContent = `Time until election: ${days}d ${hours}h ${minutes}m`;
+                    status.className = "status soon";
+                    status.setAttribute('aria-hidden','false');
+                }
+            })();
+
+            // Update result card
+            (function(){
+                const target = resultTarget;
+                const now = new Date();
+                let delta = Math.floor((target - now) / 1000);
+                const status = document.getElementById('resultStatus');
+                if (delta <= 0) {
+                    status.textContent = "Results expected (target date reached)";
+                    status.className = "status passed";
+                    status.setAttribute('aria-hidden','false');
+                    elems.rDays.textContent = "00"; elems.rHours.textContent = "00";
+                    elems.rMinutes.textContent = "00"; elems.rSeconds.textContent = "00";
+                } else {
+                    const days = Math.floor(delta / 86400); delta -= days*86400;
+                    const hours = Math.floor(delta / 3600); delta -= hours*3600;
+                    const minutes = Math.floor(delta / 60); delta -= minutes*60;
+                    const seconds = delta;
+                    elems.rDays.textContent = String(days).padStart(2,'0');
+                    elems.rHours.textContent = String(hours).padStart(2,'0');
+                    elems.rMinutes.textContent = String(minutes).padStart(2,'0');
+                    elems.rSeconds.textContent = String(seconds).padStart(2,'0');
+                    status.textContent = `Time until results: ${days}d ${hours}h ${minutes}m`;
+                    status.className = "status soon";
+                    status.setAttribute('aria-hidden','false');
+                }
+            })();
+        }
+
+        // Initial tick and then update every second.
+        tick();
+        setInterval(tick, 1000);
+    </script>
+</body>
+</html>
